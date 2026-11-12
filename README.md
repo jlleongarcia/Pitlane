@@ -23,8 +23,8 @@ composited onto your real footage.
 **Every one of those steps — trimming, joining split recordings, extracting telemetry,
 detecting laps, drawing the HUD, compositing it onto your footage — runs entirely in your own
 browser tab**, via WebCodecs, Canvas2D, and a couple of purpose-built media libraries (see
-[Repo map](#repo-map) below). Your video is never uploaded anywhere; the backend that serves
-this page has no video-processing code left in it at all.
+[Repo map](#repo-map) below). Your video is never uploaded anywhere; the server that serves
+this page is a plain nginx static-file server with no processing code at all.
 
 ## Run it
 
@@ -34,8 +34,8 @@ docker compose up --build
 
 Then open http://localhost:7000.
 
-Building locally takes well under a minute now — the backend is just a static-file server, with
-no heavy Python dependencies to install. If you'd rather skip that anyway, every push to `main`
+Building locally takes well under a minute — the image is just the built frontend behind
+nginx (~60 MB, a few MB of RAM at idle). If you'd rather skip that anyway, every push to `main`
 publishes a ready-to-run multi-arch image (see [CI/CD](#cicd) below) — pull it instead:
 
 ```sh
@@ -154,8 +154,8 @@ the browser decoded the video or the software decoder did.
 ## Storage & privacy
 
 Nothing is stored server-side, because nothing is ever sent server-side. Your video, GPX
-file, and rendered output stay on your own device the entire time — the backend you're
-talking to only ever serves the app's own JS/CSS/HTML.
+file, and rendered output stay on your own device the entire time — the nginx server
+you're talking to only ever serves the app's own JS/CSS/HTML.
 
 ## Supported telemetry sources
 
@@ -184,7 +184,8 @@ mismatched files are rejected with a clear error before anything is joined.
 ## Repo map
 
 ```
-backend/    Minimal FastAPI static-file server -- see backend/readme.md
+nginx.conf  Static-file server config (caching, MIME types, /api/health)
+scripts/    smoke-test.sh -- checks a built image's nginx behaviour (see CI/CD)
 frontend/   React + Vite + TypeScript webapp; frontend/src/lib/ is where everything runs:
               lib/telemetry/   GoPro GPMF + GPX parsing, resampling
               lib/laps/        lap detection, lap-vs-lap comparison
@@ -195,8 +196,7 @@ frontend/   React + Vite + TypeScript webapp; frontend/src/lib/ is where everyth
                                 browsers that can't decode it themselves
 ```
 
-See `backend/readme.md` for backend development/testing, and run `npm run dev` in
-`frontend/` for frontend development (`npm run test` runs the Vitest suite covering the
+Run `npm run dev` in `frontend/` for development (`npm run test` runs the Vitest suite covering the
 telemetry/lap-detection ports).
 
 ## CI/CD
@@ -207,9 +207,14 @@ on a Raspberry Pi or other ARM homelab box, not just x86 servers.
 
 - **Triggers**: push to `main`, version tags (`v*.*.*`), pull requests, or manually
   (`workflow_dispatch`).
-- **`test-backend`** and **`test-frontend`** run first — backend `pytest` (two tests, covering
-  the static-file server's route-registration order) and the frontend's `npm run test`
-  (Vitest) + `tsc` + `vite build`. Both must pass before anything is published.
+- **`test-frontend`** and **`smoke-test`** run first — the frontend's `npm run test`
+  (Vitest) + `tsc` + `vite build`, and a build of the image followed by
+  `scripts/smoke-test.sh`, which starts a container and checks the nginx rules that would
+  otherwise fail silently: `.wasm`/`.webmanifest` MIME types, `no-cache` on `index.html` and
+  `sw.js` (so the PWA's update prompt keeps working), long-lived caching on hashed `assets/`,
+  real 404s for missing files, and a non-root user. Both must pass before anything is
+  published. Run the smoke test locally with
+  `docker build -t routetracker:smoke . && scripts/smoke-test.sh`.
 - **`build-and-push`** only runs on an actual push/tag/manual dispatch — never on a pull
   request (a PR, especially from a fork, has no business publishing images, and forked PRs
   don't get write access to push to GHCR anyway). It publishes:
@@ -224,7 +229,7 @@ go to the package's settings on GitHub and change its visibility to public if yo
 
 ## Powered thanks to :heart:
 
-[FastAPI](https://github.com/fastapi/fastapi) ·
+[nginx](https://github.com/nginx/nginx) ·
 [React](https://github.com/facebook/react) ·
 [Leaflet](https://github.com/Leaflet/Leaflet) ·
 [Recharts](https://github.com/recharts/recharts) ·
