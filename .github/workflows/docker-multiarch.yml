@@ -67,14 +67,14 @@ jobs:
         with:
           context: .
           load: true
-          tags: routetracker:smoke
+          tags: pitlane:smoke
           # Own cache scope, so this single-arch build doesn't overwrite the
           # multi-arch cache build-and-push relies on.
           cache-from: type=gha,scope=smoke
           cache-to: type=gha,scope=smoke,mode=max
 
       - name: Run smoke test
-        run: ./scripts/smoke-test.sh routetracker:smoke
+        run: ./scripts/smoke-test.sh pitlane:smoke
 
   build-and-push:
     needs: [test-frontend, smoke-test]
@@ -108,7 +108,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # GHCR requires an all-lowercase image path; github.repository preserves
-      # the repo's actual case (e.g. "SomeUser/Py_RouteTracker"), which would
+      # the repo's actual case (e.g. "SomeUser/PitLane"), which would
       # otherwise make the push fail.
       - name: Compute lowercase image name
         id: image

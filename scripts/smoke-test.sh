@@ -3,13 +3,13 @@
 # rules that would otherwise fail silently -- wrong MIME types, PWA files
 # cached too long, missing assets answered with HTML instead of a 404.
 #
-#   scripts/smoke-test.sh [image]     (default: routetracker:smoke)
+#   scripts/smoke-test.sh [image]     (default: pitlane:smoke)
 set -euo pipefail
 
-IMAGE="${1:-routetracker:smoke}"
+IMAGE="${1:-pitlane:smoke}"
 PORT="${SMOKE_PORT:-17000}"
 BASE="http://127.0.0.1:${PORT}"
-NAME="routetracker-smoke-$$"
+NAME="pitlane-smoke-$$"
 FAILED=0
 
 cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }

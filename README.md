@@ -1,16 +1,16 @@
 <div align="center">
-  <h1>Py_RouteTracker</h1>
+  <h1>PitLane</h1>
   <h3>Telemetry Overlay Studio — drag in action-cam footage, overlay GPS/G-force HUDs, download.</h3>
 </div>
 
 <div align="center">
-  <a href="https://github.com/jlleongarcia/Py_RouteTracker/actions/workflows/docker-multiarch.yml">
-    <img alt="CI/CD" src="https://github.com/jlleongarcia/Py_RouteTracker/actions/workflows/docker-multiarch.yml/badge.svg" />
+  <a href="https://github.com/jlleongarcia/PitLane/actions/workflows/docker-multiarch.yml">
+    <img alt="CI/CD" src="https://github.com/jlleongarcia/PitLane/actions/workflows/docker-multiarch.yml/badge.svg" />
   </a>
-  <a href="https://github.com/jlleongarcia/Py_RouteTracker/pkgs/container/py_routetracker">
-    <img alt="Container" src="https://img.shields.io/badge/ghcr.io-py__routetracker-blue?logo=docker" />
+  <a href="https://github.com/jlleongarcia/PitLane/pkgs/container/pitlane">
+    <img alt="Container" src="https://img.shields.io/badge/ghcr.io-pitlane-blue?logo=docker" />
   </a>
-  <a href="https://github.com/jlleongarcia/Py_RouteTracker/blob/main/LICENSE">
+  <a href="https://github.com/jlleongarcia/PitLane/blob/main/LICENSE">
     <img alt="Code License" src="https://img.shields.io/badge/License-MIT-blue.svg" />
   </a>
 </div>
@@ -39,7 +39,7 @@ nginx (~60 MB, a few MB of RAM at idle). If you'd rather skip that anyway, every
 publishes a ready-to-run multi-arch image (see [CI/CD](#cicd) below) — pull it instead:
 
 ```sh
-docker run -d --name routetracker -p 7000:7000 ghcr.io/jlleongarcia/py_routetracker:latest
+docker run -d --name pitlane -p 7000:7000 ghcr.io/jlleongarcia/pitlane:latest
 ```
 
 ### Accessing it from other devices
@@ -214,13 +214,13 @@ on a Raspberry Pi or other ARM homelab box, not just x86 servers.
   `sw.js` (so the PWA's update prompt keeps working), long-lived caching on hashed `assets/`,
   real 404s for missing files, and a non-root user. Both must pass before anything is
   published. Run the smoke test locally with
-  `docker build -t routetracker:smoke . && scripts/smoke-test.sh`.
+  `docker build -t pitlane:smoke . && scripts/smoke-test.sh`.
 - **`build-and-push`** only runs on an actual push/tag/manual dispatch — never on a pull
   request (a PR, especially from a fork, has no business publishing images, and forked PRs
   don't get write access to push to GHCR anyway). It publishes:
-  - `ghcr.io/<owner>/py_routetracker:latest` — from the latest `main`.
-  - `ghcr.io/<owner>/py_routetracker:<version>` — from a `v*.*.*` tag.
-  - `ghcr.io/<owner>/py_routetracker:<short-sha>` — every build, for pinning to an exact
+  - `ghcr.io/<owner>/pitlane:latest` — from the latest `main`.
+  - `ghcr.io/<owner>/pitlane:<version>` — from a `v*.*.*` tag.
+  - `ghcr.io/<owner>/pitlane:<short-sha>` — every build, for pinning to an exact
     commit.
 
 The first time a workflow run publishes a package, GHCR makes it **private** by default —

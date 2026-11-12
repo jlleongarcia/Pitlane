@@ -1,10 +1,10 @@
 services:
-  routetracker:
+  pitlane:
     # Both image: and build: present: `docker compose pull` (or `up` without
     # --build) fetches the pre-built multi-arch image CI/CD publishes;
     # `docker compose up --build` still builds locally and tags the result
     # with this same name, exactly as before -- your choice either way.
-    image: ghcr.io/jlleongarcia/py_routetracker:latest
+    image: ghcr.io/jlleongarcia/pitlane:latest
     build:
       context: .
       dockerfile: Dockerfile
