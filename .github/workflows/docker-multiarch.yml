@@ -3,8 +3,8 @@ name: CI/CD — Test & Publish Multi-Arch Image
 # Replaces the old CICD-GHA_MultiArch.yml / ci-cd.yml / github-runner.yml,
 # which built a since-removed Streamlit app. Those three were near-duplicates
 # of each other and never actually ran a test
-# suite before publishing; this one gates the image build on the real backend
-# and frontend checks that now exist. See README.md's "CI/CD" section.
+# suite before publishing; this one gates the image build on the frontend
+# checks and a smoke test of the built image. See README.md's "CI/CD" section.
 
 on:
   push:
@@ -25,29 +25,6 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  test-backend:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Install uv
-        # astral-sh/setup-uv, unlike the other actions pinned in this file,
-        # doesn't publish a rolling major-version tag (no bare "v9") -- only
-        # exact versions. Pin and bump this by hand when needed.
-        uses: astral-sh/setup-uv@v9.0.0
-        with:
-          enable-cache: true
-          cache-dependency-glob: "backend/uv.lock"
-
-      - name: Install backend dependencies
-        working-directory: backend
-        run: uv sync
-
-      - name: Run backend tests
-        working-directory: backend
-        run: uv run pytest -q
-
   test-frontend:
     runs-on: ubuntu-latest
     steps:
@@ -73,8 +50,34 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+  smoke-test:
+    # Builds the image (amd64 only, not pushed) and runs scripts/smoke-test.sh
+    # against it: the nginx rules for MIME types, PWA cache headers and 404s
+    # fail silently if broken, so they're checked against a real container.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: pitlane:smoke
+          # Own cache scope, so this single-arch build doesn't overwrite the
+          # multi-arch cache build-and-push relies on.
+          cache-from: type=gha,scope=smoke
+          cache-to: type=gha,scope=smoke,mode=max
+
+      - name: Run smoke test
+        run: ./scripts/smoke-test.sh pitlane:smoke
+
   build-and-push:
-    needs: [test-backend, test-frontend]
+    needs: [test-frontend, smoke-test]
     # Only publish from an actual push/tag/manual run -- never from a pull_request
     # (a PR, especially from a fork, shouldn't publish images, and forked PRs
     # don't get package-write access to secrets/GITHUB_TOKEN anyway).
@@ -105,7 +108,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # GHCR requires an all-lowercase image path; github.repository preserves
-      # the repo's actual case (e.g. "SomeUser/Py_RouteTracker"), which would
+      # the repo's actual case (e.g. "SomeUser/PitLane"), which would
       # otherwise make the push fail.
       - name: Compute lowercase image name
         id: image
